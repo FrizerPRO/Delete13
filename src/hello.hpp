@@ -8,7 +8,7 @@
 namespace pg_service_template {
 
 enum class UserType { kFirstTime, kKnown };
-std::string SayHelloTo(std::string_view name, UserType type);
+std::string SayHelloTo(std::string_view name, int type);
 
 void AppendHello(userver::components::ComponentList& component_list);
 

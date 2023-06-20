@@ -17,7 +17,7 @@ services:
           - postgres
 
     pg_service_template-container:
-        image: ghcr.io/userver-framework/ubuntu-userver-build-base:v1
+        image: my_docker_image_for_m1_userver
         privileged: true
         environment:
           - POSTGRES_DB=pg_service_template_db-1

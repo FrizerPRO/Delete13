@@ -11,6 +11,46 @@ add_subdirectory(third_party/userver)
 add_library(${PROJECT_NAME}_objs OBJECT
     src/hello.hpp
     src/hello.cpp
+	src/courier-controller/CourierHandler.h
+	src/courier-controller/CourierHandler.cpp
+	src/courier-number-controller/CourierNumberHandler.h
+	src/courier-number-controller/CourierNumberHandler.cpp
+	src/couriers-info/CourierInfoHandler.h
+	src/couriers-info/CourierInfoHandler.cpp
+	src/order-complete-controller/OrderCompleteHandler.h
+	src/order-complete-controller/OrderCompleteHandler.cpp
+	src/order-number-controller/OrdersNumberHandler.h
+	src/order-number-controller/OrdersNumberHandler.cpp
+	src/order-controller/OrdersHandler.h
+	src/order-controller/OrdersHandler.cpp
+	src/schemas/CreateOrderDto/CreateOrderDto.cpp
+	src/schemas/CreateOrderDto/CreateOrderDto.h
+	src/schemas/CreateOrderRequest/CreateOrderRequest.cpp
+	src/schemas/CreateOrderRequest/CreateOrderRequest.h
+	src/schemas/OrderDto/OrderDto.cpp
+	src/schemas/OrderDto/OrderDto.h
+	src/schemas/GroupOrders/GroupOrders.cpp
+	src/schemas/GroupOrders/GroupOrders.h
+	src/schemas/CouriersGroupOrders/CouriersGroupOrders.cpp
+	src/schemas/CouriersGroupOrders/CouriersGroupOrders.h
+	src/schemas/OrderAssignResponse/OrderAssignResponse.cpp
+	src/schemas/OrderAssignResponse/OrderAssignResponse.h
+	src/schemas/CompleteOrder/CompleteOrder.cpp
+	src/schemas/CompleteOrder/CompleteOrder.h
+	src/schemas/CompleteOrderRequestDto/CompleteOrderRequestDto.cpp
+	src/schemas/CompleteOrderRequestDto/CompleteOrderRequestDto.h
+	src/schemas/CreateCourierDto/CreateCourierDto.cpp
+	src/schemas/CreateCourierDto/CreateCourierDto.h
+	src/schemas/CreateCourierRequest/CreateCourierRequest.cpp
+	src/schemas/CreateCourierRequest/CreateCourierRequest.h
+	src/schemas/CourierDto/CourierDto.cpp
+	src/schemas/CourierDto/CourierDto.h
+	src/schemas/CreateCouriersResponse/CreateCouriersResponse.cpp
+	src/schemas/CreateCouriersResponse/CreateCouriersResponse.h
+	src/schemas/GetCouriersResponse/GetCouriersResponse.cpp
+	src/schemas/GetCouriersResponse/GetCouriersResponse.h
+	src/schemas/GetCourierMetaInfoResponse/GetCourierMetaInfoResponse.cpp
+	src/schemas/GetCourierMetaInfoResponse/GetCourierMetaInfoResponse.h
 )
 target_link_libraries(${PROJECT_NAME}_objs PUBLIC userver-core userver-postgresql)
 

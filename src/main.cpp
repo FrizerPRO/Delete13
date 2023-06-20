@@ -4,6 +4,13 @@
 #include <userver/server/handlers/tests_control.hpp>
 #include <userver/testsuite/testsuite_support.hpp>
 #include <userver/utils/daemon_run.hpp>
+#include "order-controller/OrdersHandler.h"
+#include "order-number-controller/OrdersNumberHandler.h"
+#include "courier-controller/CourierHandler.h"
+#include "courier-number-controller/CourierNumberHandler.h"
+#include "order-complete-controller/OrderCompleteHandler.h"
+#include "couriers-info/CourierInfoHandler.h"
+
 
 #include "hello.hpp"
 
@@ -15,6 +22,11 @@ int main(int argc, char* argv[]) {
                             .Append<userver::server::handlers::TestsControl>();
 
   pg_service_template::AppendHello(component_list);
-
+  orders_handler_template::AppendOrdersHandler(component_list);
+  orders_number_handler_template::AppendOrdersHandler(component_list);
+  couriers_handler_template::AppendOrdersHandler(component_list);
+  couriers_naumber_handler_template::AppendOrdersHandler(component_list);
+  orders_complete_handler_template::AppendOrdersHandler(component_list);
+  couriers_info_handler_template::AppendOrdersHandler(component_list);
   return userver::utils::DaemonMain(argc, argv, component_list);
 }

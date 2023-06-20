@@ -11,7 +11,6 @@
 namespace pg_service_template {
 
 namespace {
-
 class Hello final : public userver::server::handlers::HttpHandlerBase {
  public:
   static constexpr std::string_view kName = "handler-hello";
@@ -22,29 +21,36 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
         pg_cluster_(
             component_context
                 .FindComponent<userver::components::Postgres>("postgres-db-1")
-                .GetCluster()) {}
+                .GetCluster()) {
+    constexpr auto kCreateTable = R"~(
+      CREATE TABLE IF NOT EXISTS key_value_table (
+        key VARCHAR PRIMARY KEY,
+        value INTEGER DEFAULT(1)
+      )
+    )~";
+
+    using userver::storages::postgres::ClusterHostType;
+    pg_cluster_->Execute(ClusterHostType::kMaster, kCreateTable);
+  }
 
   std::string HandleRequestThrow(
       const userver::server::http::HttpRequest& request,
       userver::server::request::RequestContext&) const override {
     const auto& name = request.GetArg("name");
 
-    auto user_type = UserType::kFirstTime;
+    int user_count = 0;
     if (!name.empty()) {
       auto result = pg_cluster_->Execute(
           userver::storages::postgres::ClusterHostType::kMaster,
-          "INSERT INTO hello_schema.users(name, count) VALUES($1, 1) "
-          "ON CONFLICT (name) "
-          "DO UPDATE SET count = users.count + 1 "
-          "RETURNING users.count",
+          "INSERT INTO key_value_table VALUES($1, 1) "
+          "ON CONFLICT (key) "
+          "DO UPDATE SET value = key_value_table.value + 1 "
+          "RETURNING value",
           name);
 
-      if (result.AsSingleRow<int>() > 1) {
-        user_type = UserType::kKnown;
-      }
+      user_count = result.AsSingleRow<int>();
     }
-
-    return pg_service_template::SayHelloTo(name, user_type);
+    return pg_service_template::SayHelloTo(name, user_count);
   }
 
   userver::storages::postgres::ClusterPtr pg_cluster_;
@@ -52,25 +58,20 @@ class Hello final : public userver::server::handlers::HttpHandlerBase {
 
 }  // namespace
 
-std::string SayHelloTo(std::string_view name, UserType type) {
+std::string SayHelloTo(std::string_view name, int user_count) {
   if (name.empty()) {
     name = "unknown user";
   }
 
-  switch (type) {
-    case UserType::kFirstTime:
-      return fmt::format("Hello, {}!\n", name);
-    case UserType::kKnown:
-      return fmt::format("Hi again, {}!\n", name);
-  }
+  return fmt::format("Hello, {},your count is:{} \n",name,user_count);
 
   UASSERT(false);
 }
 
 void AppendHello(userver::components::ComponentList& component_list) {
   component_list.Append<Hello>();
-  component_list.Append<userver::components::Postgres>("postgres-db-1");
-  component_list.Append<userver::clients::dns::Component>();
+  //component_list.Append<userver::components::Postgres>("postgres-db-1");
+  //component_list.Append<userver::clients::dns::Component>();
 }
 
 }  // namespace pg_service_template
