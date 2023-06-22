@@ -1,47 +1,104 @@
-# pg_service_template
+## Требования к сервису
 
-Template of a C++ service that uses [userver framework](https://github.com/userver-framework/userver) with PostgreSQL.
+В сервисе должны быть реализованы:
 
-
-## Download and Build
-
-To create your own userver-based service follow the following steps:
-
-1. Press the green "Use this template button" at the top of this github page
-2. Clone the service `git clone your-service-repo && cd your-service-repo`
-3. Give a propper name to your service and replace all the occurences of "pg_service_template" string with that name
-   (could be done via `find . -not -path "./third_party/*" -not -path ".git/*" -not -path './build_*' -type f | xargs sed -i 's/pg_service_template/YOUR_SERVICE_NAME/g'`).
-4. Feel free to tweak, adjust or fully rewrite the source code of your service.
+1) REST API сервиса — подробнее в Задании 1;
+2) расчет заработка курьеров — подробнее в Задании 2;
 
 
-## Makefile
+## Задание 1. REST API
 
-Makefile contains typicaly useful targets for development:
+В качестве базовой функциональности сервиса необходимо реализовать 7 базовых методов.
 
-* `make build-debug` - debug build of the service with all the assertions and sanitizers enabled
-* `make build-release` - release build of the service with LTO
-* `make test-debug` - does a `make build-debug` and runs all the tests on the result
-* `make test-release` - does a `make build-release` and runs all the tests on the result
-* `make service-start-debug` - builds the service in debug mode and starts it
-* `make service-start-release` - builds the service in release mode and starts it
-* `make` or `make all` - builds and runs all the tests in release and debug modes
-* `make format` - autoformat all the C++ and Python sources
-* `make clean-` - cleans the object files
-* `make dist-clean` - clean all, including the CMake cached configurations
-* `make install` - does a `make build-release` and runs install in directory set in environment `PREFIX`
-* `make install-debug` - does a `make build-debug` and runs install in directory set in environment `PREFIX`
-* `make docker-COMMAND` - run `make COMMAND` in docker environment
-* `make docker-build-debug` - debug build of the service with all the assertions and sanitizers enabled in docker environment
-* `make docker-test-debug` - does a `make build-debug` and runs all the tests on the result in docker environment
-* `make docker-start-service-release` - does a `make install-release` and runs service in docker environment
-* `make docker-start-service-debug` - does a `make install-debug` and runs service in docker environment
-* `make docker-clean-data` - stop docker containers and clean database data
+Для всех методов в случае корректного ответа ожидается ответ `HTTP 200 OK`.
 
-Edit `Makefile.local` to change the default configuration and build options.
+### POST /couriers
+Для загрузки списка курьеров в систему запланирован описанный ниже интерфейс.
+
+Обработчик принимает на вход список в формате json с данными о курьерах и графиком их работы.
+
+Курьеры работают только в заранее определенных районах, а также различаются по типу: пеший, велокурьер и 
+курьер на автомобиле. От типа зависит объем заказов, которые перевозит курьер.
+Районы задаются целыми положительными числами. График работы задается списком строк формата `HH:MM-HH:MM`.
+
+### GET /couriers/{courier_id}
+
+Возвращает информацию о курьере.
+
+### GET /couriers
+
+Возвращает информацию о всех курьерах.
+
+У метода есть параметры `offset` и `limit`, чтобы обеспечить постраничную выдачу.
+Если:
+* `offset` или `limit` не передаются, по умолчанию нужно считать, что `offset = 0`, `limit = 1`;
+* офферов по заданным `offset` и `limit` не найдено, нужно возвращать пустой список `couriers`.
+
+### POST /orders
+
+Принимает на вход список с данными о заказах в формате json. У заказа отображаются характеристики — вес, район, 
+время доставки и цена.
+Время доставки - строка в формате HH:MM-HH:MM, где HH - часы (от 0 до 23) и MM - минуты (от 0 до 59). Примеры: “09:00-11:00”, “12:00-23:00”, “00:00-23:59”.
 
 
-## License
+### GET /orders/{order_id}
 
-The original template is distributed under the [Apache-2.0 License](https://github.com/userver-framework/userver/blob/develop/LICENSE)
-and [CLA](https://github.com/userver-framework/userver/blob/develop/CONTRIBUTING.md). Services based on the template may change
-the license and CLA.
+Возвращает информацию о заказе по его идентификатору, а также дополнительную информацию: вес заказа, район доставки, 
+промежутки времени, в которые удобно принять заказ.
+
+### GET /orders
+
+Возвращает информацию о всех заказах, а также их дополнительную информацию: вес заказа, район доставки, промежутки времени, в которые удобно принять заказ.
+
+У метода есть параметры `offset` и `limit`, чтобы обеспечить постраничную выдачу.
+Если:
+* `offset` или `limit` не передаются, по умолчанию нужно считать, что `offset = 0`, `limit = 1`;
+* офферов по заданным `offset` и `limit` не найдено, нужно возвращать пустой список `orders`.
+
+### POST /orders/complete
+
+Принимает массив объектов, состоящий из трех полей: id курьера, id заказа и время выполнения заказа, после отмечает, что заказ выполнен.
+
+Если заказ:
+* не найден, был назначен на другого курьера или не назначен совсем — следует вернуть ошибку `HTTP 400 Bad Request`.
+* выполнен успешно — следует выводить `HTTP 200 OK` и идентификатор завершенного заказа.
+
+Обработчик должен быть идемпотентным.
+
+## Задание 2. Зарабаток курьеров за промежуток
+
+Команда сервиса решила начать учет заработной платы и рейтинго курьеров.
+Для этого необходимо реализовать новый метод `GET /couriers/meta-info/{courier_id}`.
+
+Параметры метода:
+* `start_date` - дата начала отсчета рейтинга
+* `end_date` - дата конца отсчета рейтинга.
+
+Примером значения параметров может быть `2023-01-20`. В задании можно полагаться на то, что все заказы и даты для 
+расчетов имеют одну и ту же фиксированную временную зону - UTC.
+
+Метод должен возвращать заработанные курьером деньги за заказы и его рейтинг.
+
+**Заработок рассчитывается по формуле:**
+
+Заработок рассчитывается как сумма оплаты за каждый завершенный развоз в период с `start_date` (включая) до 
+`end_date` (исключая):
+
+`sum = ∑(cost * C)`
+
+`C`  — коэффициент, зависящий от типа курьера:
+* пеший — 2
+* велокурьер — 3
+* авто — 4
+
+Если курьер не завершил ни одного развоза, то рассчитывать и возвращать заработок не нужно.
+
+# Чему я научился:
+* Создавать docker-image, собирать контейнер. (Задание было выполнено до того как мы в вузе это прошли)
+* Работать с простыми запросами в БД. Обрабатывать результат запроса (Обычно нам воозвращают ряда из БД по запросу  Select)
+* Выполнение транзакцию в БД и зачем они вообще нужны. (Например поступил запрос добавить N курьеров, но в каком то одном ошибка, я в таком случае отменяю добавление всех курьеров и возвращаю ошибку 400)
+* Работа со скриптами bash. Так как не было никакого кодгена для опенапи, написал bash скрипт для создания папок и .h .cpp файлов для моделей из openapi файла.
+* Научился пользоваться аргументами командной строки. Так как на маке не работало пришлось много что отключить.
+* Также осознал основы конфигов, как туда добавлять эндпоинты. Появилось понимание о динамическом конфиге
+* Главное чему научился - терпиливо исправлять ошибки. Потому что чтобы скомпилировать шаблон на M1 у меня ушло 4 дня
+* Научиился настраивать Виртуалку. Не сложно, но общее понятие работы с SSH ключами тож полезно.
